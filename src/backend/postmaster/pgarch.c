@@ -324,6 +324,9 @@ pgarch_MainLoop(void)
 			got_SIGHUP = false;
 			ProcessConfigFile(PGC_SIGHUP);
 		}
+		
+        /* Check for barrier events and config update */
+		HandlePgArchInterrupts();
 
 		/*
 		 * If we've gotten SIGTERM, we normally just sit and do nothing until
@@ -416,15 +419,17 @@ pgarch_ArchiverCopyLoop(void)
 				return;
 
 			/*
-			 * Check for config update.  This is so that we'll adopt a new
-			 * setting for archive_command as soon as possible, even if there
-			 * is a backlog of files to be archived.
+			 * Check for barrier events and config update.  This is so that
+			 * we'll adopt a new setting for archive_command as soon as
+			 * possible, even if there is a backlog of files to be archived.
 			 */
 			if (got_SIGHUP)
 			{
 				got_SIGHUP = false;
 				ProcessConfigFile(PGC_SIGHUP);
 			}
+			
+            HandlePgArchInterrupts();
 
 			/* can't do anything if no command ... */
 			if (!XLogArchiveCommandSet())
@@ -773,4 +778,24 @@ static void
 pgarch_die(int code, Datum arg)
 {
 	PgArch->pgprocno = INVALID_PGPROCNO;
+}
+
+/*
+ * Interrupt handler for WAL archiver process.
+ *
+ * This is called in the loops pgarch_MainLoop and pgarch_ArchiverCopyLoop.
+ * It checks for barrier events and config update, but not shutdown request
+ * because how to handle shutdown request is different between those loops.
+ */
+static void
+HandlePgArchInterrupts(void)
+{
+	if (ProcSignalBarrierPending)
+		ProcessProcSignalBarrier();
+
+	if (ConfigReloadPending)
+	{
+		ConfigReloadPending = false;
+		ProcessConfigFile(PGC_SIGHUP);
+	}
 }
