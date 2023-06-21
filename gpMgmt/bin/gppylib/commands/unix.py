@@ -315,7 +315,7 @@ class DiskFree(Command):
     def __init__(self, remoteHost, directories):
         name = "calculate disk space free on target host"
         cmdStr = '$GPHOME/bin/lib/calculate_disk_free.py --directories \"%s\"' % (
-            shlex.quote(directories))
+            shlex.quote(",".join(directories)))
 
         Command.__init__(self, name, cmdStr, ctxt=REMOTE, remoteHost=remoteHost)
 

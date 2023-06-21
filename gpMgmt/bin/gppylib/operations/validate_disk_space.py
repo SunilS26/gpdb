@@ -67,6 +67,9 @@ class RelocateDiskUsage:
     def _disk_usage(self, hostaddr, dirs):
         dirs_disk_usage = {}  # map of directories to disk usage
 
+        if len(dirs) <= 0:
+            return dirs_disk_usage
+
         pool = WorkerPool(numWorkers=min(len(dirs), self.batch_size))
         try:
             for directory in dirs:
@@ -92,6 +95,10 @@ class RelocateDiskUsage:
 
         for pair in self.pairs:
             target_filesystems = self._target_filesystems(pair)
+            #Check if the Target Hostaddr is present in the dictionary
+            if pair.target_hostaddr not in hostaddr_to_filesystems:
+                hostaddr_to_filesystems[pair.target_hostaddr] = []
+
             host_filesystems = hostaddr_to_filesystems[pair.target_hostaddr]
 
             if not host_filesystems:
@@ -128,9 +135,9 @@ class RelocateDiskUsage:
 
         for cmd in pool.getCompletedItems():
             if not cmd.was_successful():
-                raise Exception("Failed to check disk free on target segment: " + cmd.get_results().stderr_value())
+                raise Exception("Failed to check disk free on target segment: " + cmd.get_results().stderr)
 
-            filesystems = pickle.loads(base64.urlsafe_b64decode(cmd.get_results().stdout_value()))
+            filesystems = pickle.loads(base64.urlsafe_b64decode(cmd.get_results().stdout))
             for fs in filesystems:
                 fs.add_disk_usage(pair)
 
@@ -138,10 +145,10 @@ class RelocateDiskUsage:
 
 
 class FileSystem:
-    def __init__(self, name, disk_free=None):
+    def __init__(self, name, disk_free=0):
         self.name = name
-        self.disk_free = disk_free  # in kB
-        self.disk_required = None  # in kB
+        self.disk_free = disk_free # in kB
+        self.disk_required = 0  # in kB
         self.directories = None  # set of directories
 
     def add_disk_usage(self, pair):

@@ -23,13 +23,14 @@ def calculate_disk_free(directories):
 
         # skip the first line which is the header
         for line in cmd.stdout.split('\n')[1:]:
-            parts = line.split()
-            fs = FileSystem(parts[0], disk_free=parts[3])
-            filesystem_to_dirs.setdefault(fs, []).append(dir)
+            if line != "":
+                parts = line.split()
+                fs = FileSystem(parts[0], disk_free=int(parts[3]))
+                filesystem_to_dirs.setdefault(fs, []).append(dir)
 
     filesystems = []  # list of FileSystem()
     for fs, directories in filesystem_to_dirs.items():
-        fs.directories = set(directories)
+        fs.directories = (directories)
         filesystems.append(fs)
 
     return filesystems
@@ -48,30 +49,9 @@ def _disk_free(directory):
 
     if directory == os.sep:
         return cmd
-    #importing the module 
-    import logging 
-    
-    #now we will Create and configure logger 
-    logging.basicConfig(filename="sunil_gpdb.log", 
-    					format='%(asctime)s %(message)s', 
-    					filemode='w') 
-    
-    #Let us Create an object 
-    logger=logging.getLogger() 
-    
-    #Now we are going to Set the threshold of logger to DEBUG 
-    logger.setLevel(logging.DEBUG) 
-    
-    #some messages to test
-    logger.debug("This is just a harmless debug message") 
-    logger.info("This is just an information for you") 
-    logger.warning("OOPS!!!Its a Warning") 
-    logger.error("Have you try to divide a number by zero") 
-    logger.critical("The Internet is not working....") 
-    
-    logger.error(" Return Value " + cmd.returncode)
 
-    if cmd.returncode < 0:
+
+    if cmd.returncode > 0:
         path, last_element = os.path.split(directory)
         return _disk_free(path)
 
@@ -104,7 +84,7 @@ def main():
     (options, args) = parser.parse_args()
 
     filesystems = calculate_disk_free(options.directories)
-    sys.stdout.write(base64.urlsafe_b64encode(pickle.dumps(filesystems)).decode('UTF-8'))
+    sys.stdout.write(base64.urlsafe_b64encode(pickle.dumps(filesystems)).decode())
     return
 
 
