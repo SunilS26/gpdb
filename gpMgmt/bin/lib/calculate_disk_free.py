@@ -11,7 +11,7 @@ import sys
 from gppylib.operations.validate_disk_space import FileSystem
 from gppylib.gpparseopts import OptParser, OptChecker
 from gppylib.mainUtils import addStandardLoggingAndHelpOptions
-#from gppylib.commands.unix import
+from gppylib.commands.unix import findCmdInPath 
 
 
 
@@ -36,7 +36,7 @@ def calculate_disk_usage(directories):
 
 
 def __disk_usage(directory):
-    cmd  = subprocess.run(["du", "-ks", directory],
+    cmd  = subprocess.run([ findCmdInPath('du') , "-ks", directory],
                       stdout=subprocess.PIPE,
                       stderr=subprocess.PIPE,
                       universal_newlines=True)
@@ -78,7 +78,7 @@ def calculate_disk_free(directories):
 # starting at the end and execute df untill it succeds in order to find the filesystem and free space
 def __disk_free(directory):
     #the -P flag is for POSIX formatting to prevent errors on lines that would wrap
-    cmd =  subprocess.run(["df", "-Pk", directory],
+    cmd =  subprocess.run([findCmdInPath('df') , "-Pk", directory],
                           stdout=subprocess.PIPE,
                           stderr=subprocess.PIPE,
                           universal_newlines=True)

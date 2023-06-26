@@ -58,7 +58,7 @@ class RelocateDiskUsage:
                     logger.error("Not enough space on host {} for directories {}." .format(hostaddr, ', '.join(map(str, fs.directories))))
                     logger.error("Filesystem {} has {} kB available, but requires {} kB." .format(fs.name, fs.disk_free, fs.disk_required))
                     return False
-
+        logger.info("Sufficient Disk Space is Available to move mirror")
         return True
 
      #create a host to directories mapping

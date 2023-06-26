@@ -198,7 +198,7 @@ class GenericPlatform():
     """
     TODO: Sunil Need to be removed
     def getDiskFreeCmd(self):
-        return findCmdInPath('df') + " -k"
+        return findCmdInPath('df') + " -"
     """
     def getDiskUsageCmd(self):
         return findCmdInPath('du') + " -ks"
@@ -219,11 +219,12 @@ class LinuxPlatform(GenericPlatform):
 
     """
     TODO: Sunil  NEED to Remove
+    """
     def getDiskFreeCmd(self):
         # -P is for POSIX formatting.  Prevents error 
         # on lines that would wrap
         return findCmdInPath('df') + " -Pk"
-    """
+    
 
     def getPing6(self):
         return findCmdInPath('ping6')
