@@ -3,6 +3,7 @@ import pickle
 
 from gppylib.commands.base import REMOTE, WorkerPool, Command
 from gppylib.commands.unix import DiskFree, DiskUsage, MakeDirectory
+from gppylib.operations.segment_tablespace_locations import get_tablespace_locations
 from gppylib.db import dbconn
 from gppylib.gplog import get_default_logger
 
@@ -62,7 +63,7 @@ class RelocateDiskUsage:
     def _determine_source_disk_usage(self):
         for pair in self.pairs:
             pair.source_data_dir_usage = self._disk_usage(pair.source_hostaddr, [pair.source_data_dir])[pair.source_data_dir]
-            pair.source_tablespace_usage = self._disk_usage(pair.source_hostaddr, get_segment_tablespace_dirs(pair.source_data_dir))
+            pair.source_tablespace_usage = self._disk_usage(pair.source_hostaddr, get_tablespace_locations(False,pair.source_data_dir))
 
     def _disk_usage(self, hostaddr, dirs):
         dirs_disk_usage = {}  # map of directories to disk usage
@@ -162,27 +163,3 @@ class FileSystem:
 class InsufficientDiskSpaceError(Exception):
     pass
 
-
-# temporary picked from https://github.com/greenplum-db/gpdb/pull/11831
-# FIXME: don't filter on dataDirectory, but rather something else such as contentID or host/port, etc.
-def get_segment_tablespace_dirs(dataDirectory):
-    """ Create list of user-created tablespace locations for a segment data directory """
-
-    tblspclocs = []
-    tblspcoids = []
-    gettblspcoids_sql = "select oid from pg_tablespace where spcname not in ('pg_default', 'pg_global')"
-    gettblspclocs_sql = "select t.tblspc_loc||'/'||dbid from gp_tablespace_location(%s) t, gp_segment_configuration c where t.gp_segment_id = c.content and c.datadir ='%s'"
-
-    with dbconn.connect(dbconn.DbURL()) as conn:
-        result = dbconn.execSQL(conn, gettblspcoids_sql)
-        if result:
-            tblspcoids = dbconn.execSQL(conn, gettblspcoids_sql).fetchall()
-
-        # Use the tablespace oids to get the tablespace locations
-    for row in tblspcoids:
-        tblspcoid = row[0]
-        with dbconn.connect(dbconn.DbURL()) as conn:
-            something = dbconn.execSQL(conn, gettblspclocs_sql % (tblspcoid, dataDirectory)).fetchall()
-            tblspclocs.append(something)
-
-    return tblspclocs
