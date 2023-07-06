@@ -64,6 +64,7 @@ Feature: Tests for gpmovemirrors
         And the segments are synchronized
         And verify that mirrors are recognized after a restart
 
+    @skip_cleanup
     Scenario: tablespaces work
         Given a standard local demo cluster is created
           And a tablespace is created with data
@@ -76,7 +77,8 @@ Feature: Tests for gpmovemirrors
           And the segments are synchronized
           And verify that mirrors are recognized after a restart
           And the tablespace is valid
-
+    
+    @skip_cleanup
     Scenario Outline: gpmovemirrors limits number of parallel processes correctly
         Given the database is running
         And all the segments are running
@@ -110,7 +112,7 @@ Feature: Tests for gpmovemirrors
             add a validation error like both hosts recoverying to the same port - so that the triplet code fails
                 assert that gp_seg_config wasn't updated
         """
-
+    @skip_cleanup
     Scenario Outline: user can <correction> if <failed_count> mirrors failed to move initially
         Given the database is running
         And all the segments are running
@@ -620,3 +622,33 @@ Feature: Tests for gpmovemirrors
         And pg_hba file on primary of mirrors on "sdw3" with "3,4" contains no replication entries for "sdw1"
         And verify that only replication connection primary has is to "sdw3"
 
+        #
+        #    @CWIP
+        #    Scenario: gpmovemirror fails if the target host does not have enough free disk space to move mirror from source host
+        #        Given the database is running
+        #        And all the segments are running
+        #        And the segments are synchronized
+        #        And a tablespace is created with data
+        #        And a gpmovemirrors input file is created
+        #        And mount a filesystem with "{capacity}" total capacity
+        #        And edit the input file to recover mirror with content 0 to a new directory on remote host with mode 0000
+        #        And edit the input file to recover mirror with content 1 to a new directory on remote host with mode 0000
+        #        And edit the input file to recover mirror with content 2 to a new directory on remote host with mode 0000
+        #
+        #        When the user runs gpmovemirrors
+        #        Then check if full recovery failed for mirrors with content 0,1,2 for gpmovemirrors
+        #        And verify that mirror on content 3,4,5 is up
+        #        Then gpmovemirrors should return a return code of 0
+        #        And verify the tablespace directories on host "sdw3" for content "1" are valid
+        #        And verify the tablespace directories on host "sdw2" for content "5" are valid
+        #        And verify the database has mirrors
+        #        And all the segments are running
+        #        And the segments are synchronized
+        #        And verify that mirrors are recognized after a restart
+        #        And the tablespace is valid
+        #
+        #        When user stops all primary processes
+        #        And user can start transactions
+        #        Then the tablespace is valid
+        #        And the cluster is recovered in full and rebalanced
+        #
