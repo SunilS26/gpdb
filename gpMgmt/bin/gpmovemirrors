@@ -372,10 +372,11 @@ try:
                 # identify the corresponding primary pair of the mirror being moved
                 if segment.getSegmentContentId() == seg.getSegmentContentId() and segment.getSegmentRole() != seg.getSegmentRole():
                     PgHbaEntriesToUpdate.append((segment.getSegmentDataDirectory(), segment.getSegmentHostName(), newMirror.address))
-
+        #Creating a source and target mirror pair list
         pair = RelocateSegmentPair(oldMirror.address, oldMirror.dataDirectory, newMirror.address, newMirror.dataDirectory)
         pairs.append(pair)
 
+    """Check whether target hosts has sufficent space required to move mirror from source host to target host """
     disk_usage = RelocateDiskUsage(pairs, options.batch_size)
     if not disk_usage.validate_disk_space():
         raise InsufficientDiskSpaceError("Insufficient disk space on target mirror hosts.")

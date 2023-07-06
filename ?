@@ -1,0 +1,2 @@
+Error response from daemon: Error when allocating new name: Invalid container name (/_Tuesday_July_04_10_24_03), only [a-zA-Z0-9][a-zA-Z0-9_.-] are allowed
+Error: failed to rename container named gpdb7-docker-compose-sdw1-1
