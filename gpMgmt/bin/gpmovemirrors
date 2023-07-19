@@ -87,6 +87,8 @@ def parseargs():
     parser.add_option('-h', '-?', '--help', action='help',
                       help='show this help message and exit.')
     parser.add_option('--usage', action="briefhelp")
+    parser.add_option('-a', dest="interactive", action='store_false', default=True,
+                     help="quiet mode, do not require user input for confirmations")
 
     parser.set_defaults(verbose=False, filters=[], slice=(None, None))
 
@@ -376,7 +378,7 @@ try:
         pair = RelocateSegmentPair(oldMirror.address, oldMirror.dataDirectory, newMirror.address, newMirror.dataDirectory)
         pairs.append(pair)
 
-    disk_usage = RelocateDiskUsage(pairs, options.batch_size)
+    disk_usage = RelocateDiskUsage(pairs, options.batch_size, options)
     if not disk_usage.validate_disk_space():
         raise InsufficientDiskSpaceError("Insufficient disk space on target mirror hosts.")
 

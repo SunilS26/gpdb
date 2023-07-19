@@ -8,6 +8,7 @@ import subprocess
 import tempfile
 
 from gppylib.commands.gp import get_coordinatordatadir
+from gppylib.commands.base import Command, REMOTE
 
 from behave import given, when, then
 from test.behave_utils.utils import *
@@ -433,10 +434,15 @@ def impl(context, content_ids, host, mode):
                 break
 
 
-@given("edit the input file to recover mirror with content {content} to a new directory on remote host with mode {mode}")
-def impl(context, content, mode):
+@given("edit the input file to {type} mirror with content {content} to a new directory on remote host with mode {mode}")
+def impl(context, type, content, mode):
     content = int(content)
     segments = GpArray.initFromCatalog(dbconn.DbURL()).getSegmentList()
+
+    if type == "move":
+        parent_dir="/tmp/gpmovemirrors"
+    else:
+        parent_dir="/tmp"
 
     for seg in segments:
         if seg.mirrorDB.getSegmentContentId() == content:
@@ -446,7 +452,7 @@ def impl(context, content, mode):
                                              mirror.getSegmentDataDirectory())
             context.old_data_dirs[content] = [mirror.getSegmentHostName(), mirror.getSegmentDataDirectory()]
 
-            make_temp_dir_on_remote(context, mirror.getSegmentHostName(), '/tmp', mode)
+            make_temp_dir_on_remote(context, mirror.getSegmentHostName(), parent_dir, mode)
             new_datadir = context.temp_base_dir_remote
             valid_config_new = '{}|{}|{}'.format(mirror.getSegmentHostName(),
                                                  mirror.getSegmentPort(),
@@ -744,7 +750,7 @@ def impl(context):
 
 @when('the user runs gpmovemirrors with additional args "{extra_args}"')
 def run_gpmovemirrors(context, extra_args=''):
-    cmd = "gpmovemirrors --input=%s %s" % (
+    cmd = "gpmovemirrors -a --input=%s %s" % (
         context.mirror_context.input_file_path(), extra_args)
     run_gpcommand(context, cmd)
 
@@ -921,5 +927,37 @@ def impl(context, old_mirror_host, new_mirror_host):
     context.mirror_context.input_file = "/tmp/gpmovemirrors_input_{0}_{1}".format(old_mirror_host, new_mirror_host)
     with open(context.mirror_context.input_file_path(), 'w') as fd:
         fd.write(contents)
+
+
+@given('mount a filesystem with min total capacity')
+def impl(context):
+    context.mirror_context.working_directory = []
+    cmdStr = "sudo mount -t tmpfs -o size=1024 tmpfs /tmp/gpmovemirrors"
+
+    hosts_list = GpArray.initFromCatalog(dbconn.DbURL()).getHostList()
+    for host in hosts_list:
+        run_cmd('ssh %s mkdir -p %s' % (pipes.quote(host),  "/tmp/gpmovemirrors"))
+        run_cmd('ssh %s %s ' %(pipes.quote(host), cmdStr))
+
+    context.mirror_context.working_directory.append("/tmp/gpmovemirrors")
+
+@then('umount all mounted filesystem')
+def impl(context):
+    cmdStr = "sudo umount /tmp/gpmovemirrors"
+    hosts_list = GpArray.initFromCatalog(dbconn.DbURL()).getHostList()
+    for host in hosts_list:
+        print(host)
+        run_cmd('ssh %s %s ' % (pipes.quote(host), cmdStr))
+        run_cmd('ssh %s rm -rf %s' % (pipes.quote(host), "/tmp/gpmovemirrors"))
+
+
+@then('check if gpmovemirrors failed for mirrors')
+def impl(context):
+    return_code = 3
+
+    context.execute_steps('''
+    When gpmovemirrors should return a return code of {return_code}
+    Then gpmovemirrors should print "Insufficient disk space on target mirror hosts." to stdout
+    '''.format(return_code=return_code))
 
 

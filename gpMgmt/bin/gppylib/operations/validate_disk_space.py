@@ -6,6 +6,7 @@ from gppylib.commands.unix import DiskFree, DiskUsage, MakeDirectory
 from gppylib.db import dbconn
 from gppylib.gplog import get_default_logger
 from gppylib.operations.segment_tablespace_locations import get_tablespace_locations
+from gppylib import userinput
 
 logger = get_default_logger()
 
@@ -33,9 +34,10 @@ class RelocateDiskUsage:
 
     The parameter pairs is a list of RelocateSegmentPair().
     """
-    def __init__(self, pairs, batch_size):
+    def __init__(self, pairs, batch_size, options):
         self.pairs = pairs  # list of RelocateSegmentPair()
         self.batch_size = batch_size
+        self.__options = options
         for pair in self.pairs:
             pair.source_tablespace_usage = {}  # map of tablespace_location to disk usage
             pair.source_data_dir_usage = None
@@ -55,10 +57,15 @@ class RelocateDiskUsage:
                     logger.error("Not enough space on host {} for directories {}." .format(hostaddr, ', '.join(map(str, fs.directories))))
                     logger.error("Filesystem {} has {} kB available, but requires {} kB." .format(fs.name, fs.disk_free, fs.disk_required))
                     return False
-                elif fs.disk_free < (disk_free_space_with_buff + fs.disk_required) :
-                    if not userinput.ask_yesno(None, "\nLess than 10% of disk space will be avialable after mirror is moved."\
-                                                      "Continue with segment move procedure", 'N'):
-                        raise UserAbortedException()
+                elif fs.disk_free < (disk_free_space_with_buff + fs.disk_required):
+                    if self.__options.interactive:
+                        logger.info("Filesystem {} has {} kB available, but target host {} directory {} has {} kB."
+                                                   .format(fs.name,  fs.disk_free, hostaddr, ', '.join(map(str, fs.directories), fs.disk_required)))
+                        if not userinput.ask_yesno(None, "\nLess than 10% of disk space will be avialable after mirror is moved."\
+                                                          "Continue with segment move procedure", 'N'):
+
+                            logger.info("User Aborted. Exiting...")
+                            raise UserAbortedException()
         #Required Disk space is available in target host 
         return True
 

@@ -652,3 +652,25 @@ Feature: Tests for gpmovemirrors
         #        Then the tablespace is valid
         #        And the cluster is recovered in full and rebalanced
         #
+       
+    @concourse_cluster
+    Scenario: gpmovemirrors fails if the target host does not have enough free disk space to move mirror from source host
+          Given the database is running
+          And all the segments are running
+          And the segments are synchronized
+          And a tablespace is created with data
+          And mount a filesystem with min total capacity
+          And a gpmovemirrors input file is created
+          And edit the input file to move mirror with content 0 to a new directory on remote host with mode 0700
+          And edit the input file to move mirror with content 1 to a new directory on remote host with mode 0700
+          And edit the input file to move mirror with content 2 to a new directory on remote host with mode 0700
+          And edit the input file to move mirror with content 3 to a new directory on remote host with mode 0700
+          And edit the input file to move mirror with content 4 to a new directory on remote host with mode 0700
+          And edit the input file to move mirror with content 5 to a new directory on remote host with mode 0700
+
+          When the user runs gpmovemirrors
+          Then check if gpmovemirrors failed for mirrors
+          And all the segments are running
+          And the segments are synchronized
+          Then umount all mounted filesystem
+
