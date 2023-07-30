@@ -1,12 +1,13 @@
 import base64
 import pickle
-
+import sys
 from gppylib.commands.base import REMOTE, WorkerPool, Command
 from gppylib.commands.unix import DiskFree, DiskUsage, MakeDirectory
 from gppylib.db import dbconn
 from gppylib.gplog import get_default_logger
 from gppylib.operations.segment_tablespace_locations import get_tablespace_locations
-from gppylib import userinput
+from gppylib.userinput import ask_yesno
+from gppylib.mainUtils import ExceptionNoStackTraceNeeded, UserAbortedException
 
 logger = get_default_logger()
 
@@ -37,7 +38,9 @@ class RelocateDiskUsage:
     def __init__(self, pairs, batch_size, options):
         self.pairs = pairs  # list of RelocateSegmentPair()
         self.batch_size = batch_size
-        self.__options = options
+        self.options = options
+
+
         for pair in self.pairs:
             pair.source_tablespace_usage = {}  # map of tablespace_location to disk usage
             pair.source_data_dir_usage = None
@@ -53,15 +56,16 @@ class RelocateDiskUsage:
                 #Add 10% buffer in the free disk space available to warn/notice user if we are filling up the full disk space if
                 #Disk free space is exactly same as disk space required
                 disk_free_space_with_buff = int ((10 * fs.disk_required ) / 100)
+
                 if fs.disk_free <= fs.disk_required:
                     logger.error("Not enough space on host {} for directories {}." .format(hostaddr, ', '.join(map(str, fs.directories))))
                     logger.error("Filesystem {} has {} kB available, but requires {} kB." .format(fs.name, fs.disk_free, fs.disk_required))
                     return False
                 elif fs.disk_free < (disk_free_space_with_buff + fs.disk_required):
-                    if self.__options.interactive:
+                    if self.options.interactive:
                         logger.info("Filesystem {} has {} kB available, but target host {} directory {} has {} kB."
-                                                   .format(fs.name,  fs.disk_free, hostaddr, ', '.join(map(str, fs.directories), fs.disk_required)))
-                        if not userinput.ask_yesno(None, "\nLess than 10% of disk space will be avialable after mirror is moved."\
+                                                   .format(fs.name,  fs.disk_free, hostaddr, ', '.join(map(str, fs.directories)), fs.disk_required))
+                        if not ask_yesno(None, "\nLess than 10% of disk space will be available after mirror is moved."\
                                                           "Continue with segment move procedure", 'N'):
 
                             logger.info("User Aborted. Exiting...")
@@ -79,8 +83,6 @@ class RelocateDiskUsage:
         for pair in self.pairs:
             pair.source_data_dir_usage = self._disk_usage(pair.source_hostaddr, [pair.source_data_dir])[pair.source_data_dir]
             for host, content, tablespace_dir in get_tablespace_locations(False, pair.source_data_dir):
-                print(tablespace_dir)
-                print(tablespace_dir.split())
                 pair.source_tablespace_usage = self._disk_usage(pair.source_hostaddr, list(tablespace_dir.split()))
 
 
@@ -165,11 +167,11 @@ class RelocateDiskUsage:
 
 
 class FileSystem:
-    def __init__(self, name, disk_free=0):
+    def __init__(self, name, disk_free=0, disk_required=0, directories=None):
         self.name = name
         self.disk_free = disk_free # in kB
-        self.disk_required = 0  # in kB
-        self.directories = None  # set of directories
+        self.disk_required = disk_required  # in kB
+        self.directories = directories  # set of directories
 
     def add_disk_usage(self, pair):
         for dir in self.directories:

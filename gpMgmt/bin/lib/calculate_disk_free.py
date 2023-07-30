@@ -14,11 +14,12 @@ from gppylib.commands.unix import findCmdInPath
 # For each directory determine the filesystem and calculate the free disk space.
 # Returns a list of FileSystem() objects.
 def calculate_disk_free(directories):
+
     filesystem_to_dirs = {}  # map of FileSystem() to list of directories
     for dir in directories:
         cmd = _disk_free(dir)
         if cmd.returncode < 0:
-            sys.stderr.write("Failed to calculate free disk space: %s" % cmd.stderr)
+            sys.stderr.write("Failed to calculate free disk space: %s." % cmd.stderr)
             return []
 
         # skip the first line which is the header
@@ -42,7 +43,7 @@ def calculate_disk_free(directories):
 def _disk_free(directory):
     # The -P flag is for POSIX formatting to prevent errors on lines that
     # would wrap.
-    cmd = subprocess.run([findCmdInPath('df') , "-Pk", directory],
+    cmd = subprocess.run([findCmdInPath('df'), "-Pk", directory],
                          stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE,
                          universal_newlines=True)
