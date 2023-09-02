@@ -646,7 +646,8 @@ Feature: Tests for gpmovemirrors
 
     @concourse_cluster
     Scenario: gpmovemirrors fails if the target host does not have enough free disk space to move mirror to new host
-        Given the database is running
+        Given the database is not running
+        And a cluster is created with "spread" segment mirroring on "cdw" and "sdw1, sdw2, sdw3"
         And verify that mirror segments are in "spread" configuration
         And all the segments are running
         And the segments are synchronized
