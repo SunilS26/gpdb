@@ -780,7 +780,7 @@ def impl(context):
     And the segments are synchronized''')
 
 
-@given('a sample gpmovemirrors input file is created in "{mirror_config}" configuration on {parent_dir} parent directory')
+@given('a sample gpmovemirrors input file is created in "{mirror_config}" configuration on "{parent_dir}" parent directory')
 def impl(context, mirror_config, parent_dir):
     if mirror_config not in ["group", "spread"]:
         raise Exception('"%s" is not a valid mirror configuration for this step; options are "group" and "spread".')
