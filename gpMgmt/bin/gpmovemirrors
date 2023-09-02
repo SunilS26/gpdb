@@ -375,11 +375,10 @@ try:
         pair = RelocateSegmentPair(oldMirror.address, oldMirror.dataDirectory, newMirror.address, newMirror.dataDirectory)
         pairs.append(pair)
 
-    """ Validating Disk Usage requirement if interactive mode is enabled"""
-    if options.interactive:
-        disk_usage = RelocateDiskUsage(pairs, options.batch_size, options)
-        if not disk_usage.validate_disk_space():
-            raise InsufficientDiskSpaceError("Insufficient disk space on target mirror hosts.")
+    """ Validating Disk Usage requirement """
+    disk_usage = RelocateDiskUsage(pairs, options.batch_size, options)
+    if not disk_usage.validate_disk_space():
+        raise InsufficientDiskSpaceError("Insufficient disk space on target mirror hosts.")
 
     """ Prepare common execution steps for running commands on segments """
     oldMirrorsToMove = [mirror for mirror in newConfig.oldMirrorList if not mirror.inPlace]
