@@ -88,6 +88,12 @@ class RelocateDiskUsage:
 
 
     def _disk_usage(self, hostaddr, dirs):
+        """
+        Fetch the Disk usage for the given set of directories to the targetted host
+        input: hostaddr , host from which the disk usage is fetched
+        input: dirs, list of directories to fetch the details
+        output: dictionary containing directories with it's disk usage stats in kb(kilo byte)
+        """
         dirs_disk_usage = {}  # map of directories to disk usage
 
         if len(dirs) <= 0:

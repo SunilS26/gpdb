@@ -149,6 +149,22 @@ def after_scenario(context, scenario):
             os.chmod(context.temp_base_dir, 0o700)
             shutil.rmtree(context.temp_base_dir)
 
+        if 'umount_required' in context:
+            context.execute_steps('''
+                        # unmounting all mounter filesystem in concourse cluster
+                        umount all mounted filesystem
+                        ''')
+
+        # if 'umount_dir_path' in context and os.path.exists(context.umount_dir_path):
+        #     cmdStr = "sudo umount %s" % context.umount_dir_path
+        #     hosts_list = GpArray.initFromCatalog(dbconn.DbURL()).getHostList()
+        #     for host in hosts_list:
+        #         print(host)
+        #         run_cmd('ssh %s %s ' % (pipes.quote(host), cmdStr))
+        #         run_cmd('ssh %s rm -rf %s' % (pipes.quote(host), context.umount_dir_path))
+        #
+
+
     tags_to_not_restart_db = ['analyzedb', 'gpssh-exkeys']
     if not set(context.feature.tags).intersection(tags_to_not_restart_db):
         start_database_if_not_started(context)

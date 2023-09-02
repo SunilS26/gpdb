@@ -11,15 +11,17 @@ from gppylib.gpparseopts import OptParser, OptChecker
 from gppylib.mainUtils import addStandardLoggingAndHelpOptions
 from gppylib.commands.unix import findCmdInPath
 
-# For each directory determine the filesystem and calculate the free disk space.
-# Returns a list of FileSystem() objects.
 def calculate_disk_free(directories):
-
-    filesystem_to_dirs = {}  # map of FileSystem() to list of directories
+    """
+    For each directory determine the filesystem and calculate the free disk space.
+    input is list of directories 
+    output is list FileSystem() objects
+    """
+    filesystems = []  # map of FileSystem() to list of directories
     for dir in directories:
         cmd = _disk_free(dir)
-        if cmd.returncode < 0:
-            sys.stderr.write("Failed to calculate free disk space: %s." % cmd.stderr)
+        if not cmd:
+            #Return empty list since fetching disk free stats failed 
             return []
 
         # skip the first line which is the header
@@ -27,12 +29,8 @@ def calculate_disk_free(directories):
             if line != "":
                 parts = line.split()
                 fs = FileSystem(parts[0], disk_free=int(parts[3]))
-                filesystem_to_dirs.setdefault(fs, []).append(dir)
-
-    filesystems = []  # list of FileSystem()
-    for fs, directories in filesystem_to_dirs.items():
-        fs.directories = directories
-        filesystems.append(fs)
+                fs.directories = [dir]
+                filesystems.append(fs)
 
     return filesystems
 
@@ -41,22 +39,32 @@ def calculate_disk_free(directories):
 # each path element starting at the end and execute df until it succeeds in
 # order to find the filesystem and free space.
 def _disk_free(directory):
+    """ 
+    Fetch the disk free stats for the given directory
+    input is a directory
+    Output is the disk free command ouput
+    """
+    path = directory
+
+    while(path!=os.sep and not os.path.exists(path)):
+       path, last_element = os.path.split(path)
+
+    if path == os.sep:
+        sys.stderr.write("Failed to calculate free disk space: reached root dir \"%s\"."% path ) 
+        return 
+
     # The -P flag is for POSIX formatting to prevent errors on lines that
     # would wrap.
-    cmd = subprocess.run([findCmdInPath('df'), "-Pk", directory],
+    cmdResult = subprocess.run([findCmdInPath('df'), "-Pk", path],
                          stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE,
                          universal_newlines=True)
+    
+    if cmdResult.returncode != 0:
+        sys.stderr.write("Failed to calculate free disk space: %s." % cmdResult.stderr)
+        return 
 
-    if directory == os.sep:
-        return cmd
-
-
-    if cmd.returncode > 0:
-        path, last_element = os.path.split(directory)
-        return _disk_free(path)
-
-    return cmd
+    return cmdResult
 
 
 def create_parser():
