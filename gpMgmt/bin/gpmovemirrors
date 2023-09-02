@@ -375,6 +375,7 @@ try:
         pair = RelocateSegmentPair(oldMirror.address, oldMirror.dataDirectory, newMirror.address, newMirror.dataDirectory)
         pairs.append(pair)
 
+    """ Validating Disk Space requirement """
     disk_usage = RelocateDiskUsage(pairs, options.batch_size, options)
     if not disk_usage.validate_disk_space():
         raise InsufficientDiskSpaceError("Insufficient disk space on target mirror hosts.")

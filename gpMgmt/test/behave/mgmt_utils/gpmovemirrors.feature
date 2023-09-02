@@ -362,7 +362,7 @@ Feature: Tests for gpmovemirrors
     Scenario: gpmovemirrors can change from group mirroring to spread mirroring
         Given verify that mirror segments are in "group" configuration
         And pg_hba file "/data/gpdata/primary/gpseg1/pg_hba.conf" on host "sdw1" contains only cidr addresses
-        And a sample gpmovemirrors input file is created in "spread" configuration
+        And a sample gpmovemirrors input file is created in "spread" configuration on "old" parent directory
         When the user runs "gpmovemirrors --input=/tmp/gpmovemirrors_input_spread"
         Then gpmovemirrors should return a return code of 0
         # Verify that mirrors are functional in the new configuration
@@ -399,7 +399,7 @@ Feature: Tests for gpmovemirrors
     @concourse_cluster
     Scenario: gpmovemirrors can change from spread mirroring to group mirroring
         Given verify that mirror segments are in "spread" configuration
-        And a sample gpmovemirrors input file is created in "group" configuration
+        And a sample gpmovemirrors input file is created in "group" configuration on "old" parent directory
         When the user runs "gpmovemirrors --input=/tmp/gpmovemirrors_input_group --hba-hostnames"
         Then gpmovemirrors should return a return code of 0
         # Verify that mirrors are functional in the new configuration
@@ -441,7 +441,7 @@ Feature: Tests for gpmovemirrors
     Scenario: tablespaces work on a multi-host environment
         Given verify that mirror segments are in "group" configuration
           And a tablespace is created with data
-          And a sample gpmovemirrors input file is created in "spread" configuration
+          And a sample gpmovemirrors input file is created in "spread" configuration on "old" parent directory
          When the user runs "gpmovemirrors --input=/tmp/gpmovemirrors_input_spread"
          Then gpmovemirrors should return a return code of 0
           And verify the tablespace directories on host "sdw2" for content "1" are deleted
@@ -612,7 +612,7 @@ Feature: Tests for gpmovemirrors
         And a cluster is created with "spread" segment mirroring on "cdw" and "sdw1, sdw2, sdw3"
         And verify that mirror segments are in "spread" configuration
         And a gpmovemirrors directory under '/tmp' with mode '0700' is created
-        And create an input file to move mirrors on "sdw1" to "sdw3"
+        And create an input file to move mirrors from "sdw1" to "sdw3" in "same" data directory
         When the user runs "gpmovemirrors -a --input=/tmp/gpmovemirrors_input_sdw1_sdw3"
         Then gpmovemirrors should return a return code of 0
         Then verify the database has mirrors
@@ -642,5 +642,19 @@ Feature: Tests for gpmovemirrors
           And gpmovemirrors should print "Insufficient disk space on target mirror hosts." to stdout
           And all the segments are running
           And the segments are synchronized
-          Then umount all mounted filesystem
+
+    @concourse_cluster
+    Scenario: gpmovemirrors fails if the target host does not have enough free disk space to move mirror to new host
+        Given the database is running
+        And all the segments are running
+        And the segments are synchronized
+        And a tablespace is created with data
+        And mount a filesystem with min total capacity
+        And create an input file to move mirrors from "sdw2" to "sdw3" in "context" data directory
+        When the user runs "gpmovemirrors --input=/tmp/gpmovemirrors_input_sdw2_sdw3"
+
+        Then gpmovemirrors should return a return code of 3
+        And gpmovemirrors should print "Insufficient disk space on target mirror hosts." to stdout
+        And all the segments are running
+        And the segments are synchronized
 

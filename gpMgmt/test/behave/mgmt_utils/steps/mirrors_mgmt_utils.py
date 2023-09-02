@@ -780,8 +780,8 @@ def impl(context):
     And the segments are synchronized''')
 
 
-@given('a sample gpmovemirrors input file is created in "{mirror_config}" configuration')
-def impl(context, mirror_config):
+@given('a sample gpmovemirrors input file is created in "{mirror_config}" configuration on "{parent_dir}" parent directory')
+def impl(context, mirror_config, parent_dir):
     if mirror_config not in ["group", "spread"]:
         raise Exception('"%s" is not a valid mirror configuration for this step; options are "group" and "spread".')
 
@@ -824,7 +824,11 @@ def impl(context, mirror_config):
             mirror = next(iter([mirror for mirror in mirrors if mirror.getSegmentContentId() == content]), None)
 
             old_directory = mirror.getSegmentDataDirectory()
-            new_directory = '%s_moved' % old_directory
+            if parent_dir == "old" :
+                new_directory = '%s_moved' % old_directory
+            else:
+                initial_path, last_element = os.path.split(old_directory)
+                new_directory = '/tmp/gpmovemirrors_disk/%s_moved' % last_element
 
             fd.write(line_template % (old_address, old_port, old_directory, new_address, new_port, new_directory))
         fd.flush()
@@ -909,10 +913,10 @@ def impl(context):
         And the segments are synchronized
         ''')
 
-@given('create an input file to move mirrors on "{old_mirror_host}" to "{new_mirror_host}"')
-@then('create an input file to move mirrors on "{old_mirror_host}" to "{new_mirror_host}"')
-@when('create an input file to move mirrors on "{old_mirror_host}" to "{new_mirror_host}"')
-def impl(context, old_mirror_host, new_mirror_host):
+@given('create an input file to move mirrors from "{old_mirror_host}" to "{new_mirror_host}" in "{data_dir}" data directory')
+@then('create an input file to move mirrors from "{old_mirror_host}" to "{new_mirror_host}" in "{data_dir}" data directory')
+@when('create an input file to move mirrors from "{old_mirror_host}" to "{new_mirror_host}" in "{data_dir}" data directory')
+def impl(context, old_mirror_host, new_mirror_host, data_dir):
     contents = ''
     port = 8000
     segments = GpArray.initFromCatalog(dbconn.DbURL()).getSegmentList()
@@ -921,8 +925,16 @@ def impl(context, old_mirror_host, new_mirror_host):
             continue
 
         mirror = seg.mirrorDB
-        contents += '{0}|{1}|{2} {3}|{4}|{2}\n'.format(mirror.getSegmentHostName(), mirror.getSegmentPort(),
-                                                       mirror.getSegmentDataDirectory(), new_mirror_host, str(port))
+
+        if data_dir == "same":
+            new_data_dir = mirror.getSegmentDataDirectory()
+        elif data_dir == "context":
+            old_data_dir = mirror.getSegmentDataDirectory()
+            initial_path, last_element = os.path.split(old_data_dir)
+            new_data_dir = "%s/%s" %(context.mirror_context.working_directory[0], last_element)
+
+        contents += '{0}|{1}|{2} {3}|{4}|{5}\n'.format(mirror.getSegmentHostName(), mirror.getSegmentPort(),
+                                                       mirror.getSegmentDataDirectory(), new_mirror_host, str(port), new_data_dir)
         port = port+1
     context.mirror_context.input_file = "/tmp/gpmovemirrors_input_{0}_{1}".format(old_mirror_host, new_mirror_host)
     with open(context.mirror_context.input_file_path(), 'w') as fd:
@@ -940,13 +952,13 @@ def impl(context):
         run_cmd('ssh %s %s ' %(pipes.quote(host), cmdStr))
 
     context.mirror_context.working_directory.append("/tmp/gpmovemirrors_disk")
+    context.umount_required = True
 
 @then('umount all mounted filesystem')
 def impl(context):
     cmdStr = "sudo umount /tmp/gpmovemirrors_disk"
     hosts_list = GpArray.initFromCatalog(dbconn.DbURL()).getHostList()
     for host in hosts_list:
-        print(host)
         run_cmd('ssh %s %s ' % (pipes.quote(host), cmdStr))
         run_cmd('ssh %s rm -rf %s' % (pipes.quote(host), "/tmp/gpmovemirrors_disk"))
 
