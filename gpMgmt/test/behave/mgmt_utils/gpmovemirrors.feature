@@ -646,14 +646,13 @@ Feature: Tests for gpmovemirrors
 
     @concourse_cluster
     Scenario: gpmovemirrors fails if the target host does not have enough free disk space to move mirror to new host
-        Given a working directory of the test as '/tmp/gpmovemirrors'
-        And the database is not running
-        And a cluster is created with "group" segment mirroring on "cdw" and "sdw1, sdw2, sdw3"
-        And verify that mirror segments are in "group" configuration
-        And a sample gpmovemirrors input file is created in "spread" configuration on "new" parent directory
+        Given the database is running
+        And verify that mirror segments are in "spread" configuration
+        And all the segments are running
+        And the segments are synchronized
+        And a sample gpmovemirrors input file is created in "group" configuration on "new" parent directory
         And mount a filesystem with min total capacity
-        And a gpmovemirrors input file is created
-        When the user runs "gpmovemirrors --input=/tmp/gpmovemirrors_input_spread"
+        When the user runs "gpmovemirrors -a --input=/tmp/gpmovemirrors_input_group"
 
         Then gpmovemirrors should return a return code of 3
         And gpmovemirrors should print "Insufficient disk space on target mirror hosts." to stdout

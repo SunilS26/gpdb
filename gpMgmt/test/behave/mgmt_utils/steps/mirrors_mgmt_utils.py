@@ -824,11 +824,11 @@ def impl(context, mirror_config, parent_dir):
             mirror = next(iter([mirror for mirror in mirrors if mirror.getSegmentContentId() == content]), None)
 
             old_directory = mirror.getSegmentDataDirectory()
-            if parent_dir == "old" :
+            if parent_dir == "old":
                 new_directory = '%s_moved' % old_directory
             else:
-                old_directory, last_element = os.path.split(old_directory)
-                new_directory = '/tmp/gpmovemirrors_disk/%s_moved' % last_element
+                initial_directory, last_dir = os.path.split(old_directory)
+                new_directory = '/tmp/gpmovemirrors_disk/%s_moved' % last_dir
 
             fd.write(line_template % (old_address, old_port, old_directory, new_address, new_port, new_directory))
         fd.flush()
