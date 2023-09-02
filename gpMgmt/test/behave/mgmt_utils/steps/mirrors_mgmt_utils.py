@@ -828,7 +828,7 @@ def impl(context, mirror_config, parent_dir):
                 new_directory = '%s_moved' % old_directory
             else:
                 old_directory, last_element = os.path.split(old_directory)
-                new_directory = '/tmp/gpaddmirrors_disk/%s_moved' % last_element
+                new_directory = '/tmp/gpmovemirrors_disk/%s_moved' % last_element
 
             fd.write(line_template % (old_address, old_port, old_directory, new_address, new_port, new_directory))
         fd.flush()

@@ -149,10 +149,10 @@ def after_scenario(context, scenario):
             os.chmod(context.temp_base_dir, 0o700)
             shutil.rmtree(context.temp_base_dir)
 
-        if 'umount_required' in context:
+        if 'umount_required' in context and context.unmount_required:
             context.execute_steps('''
                         # unmounting all mounter filesystem in concourse cluster
-                        umount all mounted filesystem
+                        Then umount all mounted filesystem
                         ''')
 
         # if 'umount_dir_path' in context and os.path.exists(context.umount_dir_path):
