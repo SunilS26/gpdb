@@ -651,8 +651,8 @@ Feature: Tests for gpmovemirrors
         And the segments are synchronized
         And a tablespace is created with data
         And mount a filesystem with min total capacity
-        And create an input file to move mirrors from "sdw1" to "sdw3" in "context" data directory
-        When the user runs "gpmovemirrors -a --input=/tmp/gpmovemirrors_input_sdw1_sdw3"
+        And create an input file to move mirrors from "sdw2" to "sdw3" in "context" data directory
+        When the user runs "gpmovemirrors -a --input=/tmp/gpmovemirrors_input_sdw2_sdw3"
 
         Then gpmovemirrors should return a return code of 3
         And gpmovemirrors should print "Insufficient disk space on target mirror hosts." to stdout
