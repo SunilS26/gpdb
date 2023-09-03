@@ -930,7 +930,7 @@ def impl(context, old_mirror_host, new_mirror_host, data_dir):
         elif data_dir == "context":
                     old_data_dir = mirror.getSegmentDataDirectory()
                     initial_path, last_element = os.path.split(old_data_dir)
-                    new_data_dir = "{}/{}" % (context.mirror_context.working_directory[0], last_element)
+                    new_data_dir = "%s/%s" % (context.mirror_context.working_directory[0], last_element)
 
         contents += '{0}|{1}|{2} {3}|{4}|{5}\n'.format(mirror.getSegmentHostName(), mirror.getSegmentPort(),
                                                     mirror.getSegmentDataDirectory(),new_mirror_host, str(port), new_data_dir)
