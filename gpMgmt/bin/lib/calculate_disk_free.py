@@ -15,7 +15,7 @@ def calculate_disk_free(directories):
     """
     For each directory determine the filesystem and calculate the free disk space.
     input is list of directories 
-    output is list FileSystem() objects
+    output is list FileSystem() objects for the queried directories.
     """
     filesystems = []  # map of FileSystem() to list of directories
     for dir in directories:
@@ -42,7 +42,7 @@ def _disk_free(directory):
     """ 
     Fetch the disk free stats for the given directory
     input is a directory
-    Output is the disk free command ouput
+    Output is the disk free command output
     """
     path = directory
 
