@@ -220,6 +220,11 @@ class LinuxPlatform(GenericPlatform):
     def getPing6(self):
         return findCmdInPath('ping6')
 
+    def getDiskFreeCmd(self):
+        # -P is for POSIX formatting.  Prevents error
+        # on lines that would wrap
+        return findCmdInPath('df') + " -Pk"
+
 
 class DarwinPlatform(GenericPlatform):
     def __init__(self):
@@ -323,6 +328,16 @@ class DiskFree(Command):
             shlex.quote(",".join(directories)))
 
         Command.__init__(self, name, cmdStr, ctxt=REMOTE, remoteHost=remoteHost)
+
+    # For local disk free, using plain df command since using the above script
+    # will encode the result to base64, which is not required in local host call.
+    @staticmethod
+    def get_disk_free_info_local(name, directory):
+        cmdStr = "%s %s" % (SYSTEM.getDiskFreeCmd(), directory)
+        dfCmd = Command(name, cmdStr, ctxt=LOCAL)
+        dfCmd.run(validateAfter=True)
+        rawIn=dfCmd.get_results().stdout.split('\n')[1]
+        return rawIn.split()
 
 # -------------du----------------------
 class DiskUsage(Command):
