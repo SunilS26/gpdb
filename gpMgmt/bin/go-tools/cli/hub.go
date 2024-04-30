@@ -35,6 +35,7 @@ var (
 	serviceDir        string // Provide the service file's directory and name separately so users can name different files for different clusters
 	serviceName       string
 	serviceUser       string
+	withoutTLS        bool
 
 	GetUlimitSsh = GetUlimitSshFn
 )
@@ -88,16 +89,17 @@ func configureCmd() *cobra.Command {
 	configureCmd.Flags().StringArrayVar(&hostnames, "host", []string{}, `Segment hostname`)
 	configureCmd.Flags().StringVar(&hostfilePath, "hostfile", "", `Path to file containing a list of segment hostnames`)
 	configureCmd.MarkFlagsMutuallyExclusive("host", "hostfile")
+	configureCmd.Flags().BoolVar(&withoutTLS, "without-tls", false, "Specifies whether a TLS is used for communication")
 
-	requiredFlags := []string{
-		"ca-certificate",
-		"ca-key",
-		"server-certificate",
-		"server-key",
-	}
-	for _, flag := range requiredFlags {
-		configureCmd.MarkFlagRequired(flag) // nolint
-	}
+	// requiredFlags := []string{
+	// 	"ca-certificate",
+	// 	"ca-key",
+	// 	"server-certificate",
+	// 	"server-key",
+	// }
+	// for _, flag := range requiredFlags {
+	// 	configureCmd.MarkFlagRequired(flag) // nolint
+	// }
 
 	viper.BindPFlag("gphome", configureCmd.Flags().Lookup("gphome")) // nolint
 	gpHome = viper.GetString("gphome")
@@ -127,10 +129,12 @@ func RunConfigure(cmd *cobra.Command, args []string) (err error) {
 		return errors.New("hub port and agent port must be different")
 	}
 
-	// Convert file/directory paths to absolute path before writing to gp.Conf file
-	err = resolveAbsolutePaths()
-	if err != nil {
-		return err
+	if cmd.Flags().Lookup("without-tls").Changed {
+		// Convert file/directory paths to absolute path before writing to gp.Conf file
+		err = resolveAbsolutePaths()
+		if err != nil {
+			return err
+		}
 	}
 
 	if cmd.Flags().Lookup("hostfile").Changed {
@@ -154,6 +158,7 @@ func RunConfigure(cmd *cobra.Command, args []string) (err error) {
 		LogDir:      hubLogDir,
 		ServiceName: serviceName,
 		GpHome:      gpHome,
+		WithoutTLS:  withoutTLS,
 		Credentials: &utils.GpCredentials{
 			CACertPath:     caCertPath,
 			CAKeyPath:      caKeyPath,

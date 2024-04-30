@@ -15,6 +15,8 @@ import (
 	"github.com/greenplum-db/gpdb/gp/idl"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 var (
@@ -45,6 +47,7 @@ func RootCommand() *cobra.Command {
 		statusCmd(),
 		stopCmd(),
 		initCmd(),
+		taskCmd(),
 	)
 
 	return root
@@ -88,18 +91,32 @@ func ConnectToHubFunc(conf *hub.Config) (idl.HubClient, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	credentials, err := conf.Credentials.LoadClientCredentials()
-	if err != nil {
-		return nil, err
+	var credentials credentials.TransportCredentials
+	var err error
+	if !conf.WithoutTLS {
+		credentials, err = conf.Credentials.LoadClientCredentials()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	address := fmt.Sprintf("localhost:%d", conf.Port)
-	conn, err = DialContextFunc(ctx, address,
-		grpc.WithTransportCredentials(credentials),
-		grpc.WithBlock(),
-		grpc.FailOnNonTempDialError(true),
-		grpc.WithReturnConnectionError(),
-	)
+	if !conf.WithoutTLS {
+		conn, err = DialContextFunc(ctx, address,
+			grpc.WithTransportCredentials(credentials),
+			grpc.WithBlock(),
+			grpc.FailOnNonTempDialError(true),
+			grpc.WithReturnConnectionError(),
+		)
+	} else {
+		conn, err = DialContextFunc(ctx, address,
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithBlock(),
+			grpc.FailOnNonTempDialError(true),
+			grpc.WithReturnConnectionError(),
+		)
+	}
+
 	if err != nil {
 		return nil, fmt.Errorf("could not connect to hub on port %d: %w", conf.Port, err)
 	}

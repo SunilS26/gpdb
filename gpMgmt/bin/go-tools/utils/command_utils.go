@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"io"
@@ -9,8 +10,12 @@ import (
 	"path"
 	"path/filepath"
 	"reflect"
+	"strings"
 
 	"github.com/greenplum-db/gp-common-go-libs/gplog"
+	"github.com/greenplum-db/gp-common-go-libs/iohelper"
+	"github.com/spf13/viper"
+	"gopkg.in/yaml.v2"
 )
 
 type CommandBuilder interface {
@@ -82,8 +87,116 @@ func RunGpSourcedCommand(cmdBuilder CommandBuilder, gpHome string) (*bytes.Buffe
 	return out, err
 }
 
+func GetServiceTaskConfigPath() string {
+	return filepath.Join(viper.GetString("gphome"), "gpdr_service_tasks_config.yml")
+}
+
+func GetActiveServiceTaskConfigPath() string {
+	return filepath.Join(viper.GetString("gphome"), "gpdr_service_active_tasks.yml")
+}
+
 func GetGpUtilityPath(gpHome, utility string) string {
 	return path.Join(gpHome, "bin", utility)
+}
+
+func ReadYamlFile[T any](contents *T, filePath string) error {
+	yfile, err := os.ReadFile(filePath)
+	if err != nil {
+		return err
+	}
+	err = yaml.Unmarshal(yfile, &contents)
+	return err
+}
+
+func WriteContentsToFile(filename string, confContent string) error {
+	filePtr, err := iohelper.OpenFileForWriting(filename)
+	if err != nil {
+		return err
+	}
+	defer func() error {
+		err = filePtr.Close()
+		return err
+	}()
+	_, err = filePtr.Write([]byte(confContent))
+	return err
+}
+
+// Callers responsibility to remove any existing file
+func CopyToReadOnlyFile(destFilePath string, srcFilePath string) error {
+	//Remove destination file if it exists
+	if _, err := os.Stat(destFilePath); err == nil {
+		err := os.Remove(destFilePath)
+		if err != nil {
+			return fmt.Errorf("unable to remove existing file: %s", err)
+		}
+	}
+
+	srcContents, err := os.ReadFile(srcFilePath)
+	if err != nil {
+		return fmt.Errorf("unable to open source file for reading content: %s", err)
+	}
+
+	err = WriteContentsToFile(destFilePath, string(srcContents))
+	if err != nil {
+		return err
+	}
+
+	// change the file permissions to read-only
+	err = os.Chmod(destFilePath, 0444)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func LoadTaskConfigFileWithValidation(serviceConfigFilePath string) ([]TaskConfigOptions, error) {
+	gplog.Debug("Loading service task configuration file from %s", serviceConfigFilePath)
+
+	var taskList []TaskConfigOptions
+	err := ReadYamlFile(&taskList, serviceConfigFilePath)
+	if err != nil {
+		return taskList, err
+	}
+
+	// Config is valid
+	gplog.Debug("Successfully validated the service task configuration parameters")
+	return taskList, nil
+}
+
+func ForceConfigPrompt(cmd string, promptMsg string) error {
+	fmt.Println()
+	for {
+		fmt.Print(promptMsg)
+		reader := bufio.NewReader(os.Stdin)
+		input, err := reader.ReadString('\n')
+		if err != nil {
+			return err
+		}
+
+		input = strings.ToLower(strings.TrimSpace(input))
+		switch input {
+		case "y":
+			fmt.Println()
+			fmt.Printf("Proceeding with the %s operation...\n", cmd)
+			fmt.Println()
+			return nil
+		case "n":
+			fmt.Println()
+			fmt.Printf("Aborting the %s operation...\n", cmd)
+			return fmt.Errorf("user aborted the operation")
+		}
+	}
+}
+
+// Required configuration parameters for the task
+type TaskConfigOptions struct {
+	Name              string `yaml:"name"`
+	PreHook           string `yaml:"pre_hook"`
+	GpdrCmd           string `yaml:"gpdr_cmd"`
+	PostHook          string `yaml:"post_hook"`
+	MaxRetriesOnError uint16 `yaml:"max_retries_on_error"`
+	Schedule          string `yaml:"schedule"`
 }
 
 // GenerateArgs generates command arguments based on the provided CommandBuilder object.

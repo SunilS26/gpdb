@@ -16,6 +16,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/connectivity"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/reflection"
 	grpcStatus "google.golang.org/grpc/status"
 
@@ -42,6 +43,7 @@ type Config struct {
 	LogDir      string   `json:"hubLogDir"` // log directory for the hub itself; utilities might go somewhere else
 	ServiceName string   `json:"serviceName"`
 	GpHome      string   `json:"gphome"`
+	WithoutTLS  bool     `json:"withoutTLS"`
 
 	Credentials utils.Credentials
 }
@@ -51,10 +53,11 @@ type Server struct {
 	Conns      []*Connection
 	grpcDialer Dialer
 
-	mutex      sync.Mutex
-	grpcServer *grpc.Server
-	listener   net.Listener
-	finish     chan struct{}
+	mutex          sync.Mutex
+	grpcServer     *grpc.Server
+	listener       net.Listener
+	finish         chan struct{}
+	activeTaskList map[string]*TaskDataInfo
 }
 
 type Connection struct {
@@ -66,9 +69,10 @@ type Connection struct {
 
 func New(conf *Config, grpcDialer Dialer) *Server {
 	h := &Server{
-		Config:     conf,
-		grpcDialer: grpcDialer,
-		finish:     make(chan struct{}, 1),
+		Config:         conf,
+		grpcDialer:     grpcDialer,
+		finish:         make(chan struct{}, 1),
+		activeTaskList: make(map[string]*TaskDataInfo),
 	}
 	return h
 }
@@ -87,14 +91,25 @@ func (s *Server) Start() error {
 		return handler(ctx, req)
 	}
 
-	credentials, err := s.Credentials.LoadServerCredentials()
-	if err != nil {
-		return err
+	var credentials credentials.TransportCredentials
+	if !s.WithoutTLS {
+		credentials, err = s.Credentials.LoadServerCredentials()
+		if err != nil {
+			return err
+		}
 	}
-	grpcServer := grpc.NewServer(
-		grpc.Creds(credentials),
-		grpc.UnaryInterceptor(interceptor),
-	)
+
+	var grpcServer *grpc.Server
+	if !s.WithoutTLS {
+		grpcServer = grpc.NewServer(
+			grpc.Creds(credentials),
+			grpc.UnaryInterceptor(interceptor),
+		)
+	} else {
+		grpcServer = grpc.NewServer(
+			grpc.UnaryInterceptor(interceptor),
+		)
+	}
 
 	s.mutex.Lock()
 	s.grpcServer = grpcServer

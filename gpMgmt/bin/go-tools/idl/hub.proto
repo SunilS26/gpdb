@@ -11,7 +11,12 @@ service Hub {
     rpc StopAgents(StopAgentsRequest) returns (StopAgentsReply) {}
     rpc MakeCluster(MakeClusterRequest) returns (stream HubReply) {}
     rpc AddMirrors(AddMirrorsRequest) returns (stream HubReply) {}
-  rpc GetAllHostNames(GetAllHostNamesRequest) returns (GetAllHostNamesReply) {}
+    rpc GetAllHostNames(GetAllHostNamesRequest) returns (GetAllHostNamesReply) {}
+    rpc ApplyTasks(TaskApplyServiceRequest) returns (TaskApplyServiceReply) {}
+    rpc ScheduleTasks(TaskScheduleServiceRequest) returns (TaskScheduleServiceReply) {}
+    rpc GetTaskStatus(TaskStatusServiceRequest) returns (TaskStatusServiceReply) {}
+    rpc StopTasks(TaskStopServiceRequest) returns (TaskStopServiceReply) {}
+    rpc RunTasks(TaskRunServiceRequest) returns (TaskRunServiceReply) {}
 }
 
 message AddMirrorsRequest {
@@ -123,3 +128,73 @@ message Locale {
     string lc_numeric = 6;
     string lc_time = 7;
 }
+
+
+//-----------------Set-Tasks----------------------------------
+enum taskAction {
+  ADD = 0;
+  REMOVE = 1;
+  UPDATE = 2;
+}
+message TaskApplyServiceRequest {
+  taskAction task_action = 2;
+}
+
+message TaskApplyServiceReply { }
+
+//---------------- Schedule Task --------------------------------
+message TaskScheduleServiceRequest {
+  repeated string task_list = 2;
+}
+
+message TaskScheduleServiceReply {
+  // Start status of each task in task_list
+  repeated string status = 1;
+}
+
+//---------------- Stop Task --------------------------------
+message TaskStopServiceRequest {
+  repeated string task_list = 2;
+}
+
+message TaskStopServiceReply {
+  // Stop status of each task in task_list
+  repeated string status = 1;
+}
+
+//---------------- Run Task --------------------------------
+//Status data
+message taskRunStatus {
+  string task_name = 1;
+  string  pre_hook_status = 2;
+  string  gpdr_cmd_status = 3;
+  string  post_hook_status = 4;
+}
+message TaskRunServiceRequest {
+  repeated string task_list = 2;
+}
+
+message TaskRunServiceReply {
+  repeated taskRunStatus task_return_status = 1;
+}
+
+//---------------- Service and Task Status ---------------------
+message cmdStatus {
+  string  pre_hook_status = 1;
+  string  gpdr_cmd_status = 2;
+  string  post_hook_status = 3;
+  string LastTriggeredTime = 4;
+  string NextScheduledTime = 5;
+}
+
+message TaskStatusServiceRequest { }
+
+message TaskStatusServiceReply {
+  int32 pid = 1;
+  string port = 2;
+  // task to it's status map
+  map<string, cmdStatus> task_cmd_status = 3;
+}
+
+
+
