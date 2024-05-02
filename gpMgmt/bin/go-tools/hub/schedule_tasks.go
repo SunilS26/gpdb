@@ -1,6 +1,7 @@
 package hub
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 
@@ -25,14 +26,14 @@ func (s *Server) ScheduleTasks(ctx context.Context, in *idl.TaskScheduleServiceR
 	for i, taskName := range in.TaskList {
 		err := s.InitializeAndStartTask(taskName, "", "", false, false, false)
 		if err != nil {
-			gplog.Warn("failed to start the task %s: %w", taskName, err)
+			gplog.Warn("failed to start the task %s: %s", taskName, err)
 			taskExitStatus[i] = "FAILED"
 		} else {
 			taskExitStatus[i] = "SUCCESS"
 		}
 	}
 
-	gplog.Info("Successfully started tasks %s", s.activeTaskList)
+	gplog.Info("Successfully started tasks %v", s.activeTaskList)
 	return &idl.TaskScheduleServiceReply{Status: taskExitStatus}, nil
 }
 
@@ -46,7 +47,7 @@ func (s *Server) NextScheduledTime(taskName string) time.Time {
 	parser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
 	scheduleSpec, err := parser.Parse(schedule)
 	if err != nil {
-		gplog.Info("Error parsing cron schedule:", err)
+		gplog.Info("Error parsing cron schedule:%s", err)
 		return time.Time{}
 	}
 
@@ -55,6 +56,25 @@ func (s *Server) NextScheduledTime(taskName string) time.Time {
 	gplog.Info("Next Schedule %s", next.Format(time.RFC3339))
 
 	return next
+}
+func ExecuteCommandInBackground(cmdStr string, stdout, stderr bytes.Buffer) (int, *exec.Cmd, error) {
+	gplog.Info("Received command to run %s", cmdStr)
+
+	cmd := exec.Command("bash", "-c", cmdStr)
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	err := cmd.Start()
+	if err != nil {
+		gplog.Info("command `%s` failed : %s with ", cmdStr, err)
+		return -1, nil, err
+	}
+
+	// Get the process ID
+	pid := cmd.Process.Pid
+	gplog.Info("Process ID: %d", pid)
+
+	return pid, cmd, nil
 }
 
 func ExecuteCommand(cmdStr string) (string, error) {
@@ -78,7 +98,7 @@ func (s *Server) ExecuteTaskCommands(cmdStr string, maxRetries uint16) error {
 		gplog.Info("[%d]: Running the Command -\" %s\"", cnt, cmdStr)
 		output, err := ExecuteCommand(cmdStr)
 		if err != nil {
-			gplog.Warn("command `%s` failed : %w", cmdStr, err)
+			gplog.Warn("command `%s` failed : %s", cmdStr, err)
 			gplog.Debug("could not execute, retry attempt cnt %d ", cnt+1)
 		}
 		if err == nil {
@@ -93,13 +113,13 @@ func (s *Server) ExecuteTaskCommands(cmdStr string, maxRetries uint16) error {
 // Default behaviour is to keep trying if onerror is mot specifies explicitly
 // OnError for hook is default skip and for whole is also skip
 func (s *Server) ExecuteTask(taskArgs utils.TaskConfigOptions, cmdExitStatus *TaskExitStatus) error {
-	gplog.Info("ExecuteTask called for task %s", taskArgs)
+	gplog.Info("ExecuteTask called for task %v", taskArgs)
 
 	// Run the pre hook command
 	if taskArgs.PreHook != "" {
 		err := s.ExecuteTaskCommands(taskArgs.PreHook, taskArgs.MaxRetriesOnError)
 		if err != nil {
-			gplog.Info("PreHook Command \"%s\" of task \"%s\" failed %w", taskArgs.PreHook, taskArgs.Name, err)
+			gplog.Info("PreHook Command \"%s\" of task \"%s\" failed %s", taskArgs.PreHook, taskArgs.Name, err)
 			cmdExitStatus.PreHookStatus = false
 		} else {
 			gplog.Info("Successfully executed PreHook Command \"%s\" of task \"%s\"", taskArgs.PreHook, taskArgs.Name)
@@ -112,7 +132,7 @@ func (s *Server) ExecuteTask(taskArgs utils.TaskConfigOptions, cmdExitStatus *Ta
 	cmdStrWithPath := fmt.Sprintf("source ~/.bashrc && %s", taskArgs.GpdrCmd)
 	err := s.ExecuteTaskCommands(cmdStrWithPath, taskArgs.MaxRetriesOnError)
 	if err != nil {
-		gplog.Info("Gpdr Command \"%s\" of task \"%s\" failed %w", taskArgs.GpdrCmd, taskArgs.Name, err)
+		gplog.Info("Gpdr Command \"%s\" of task \"%s\" failed %s", taskArgs.GpdrCmd, taskArgs.Name, err)
 		cmdExitStatus.CmdStatus = false
 	} else {
 		gplog.Info("Successfully executed Gpdr Command \"%s\" of task \"%s\"", taskArgs.GpdrCmd, taskArgs.Name)
@@ -123,7 +143,7 @@ func (s *Server) ExecuteTask(taskArgs utils.TaskConfigOptions, cmdExitStatus *Ta
 		// if successful then run the post hook
 		err = s.ExecuteTaskCommands(taskArgs.PostHook, taskArgs.MaxRetriesOnError)
 		if err != nil {
-			gplog.Info("PostHook Command \"%s\" of task \"%s\" failed %w", taskArgs.PostHook, taskArgs.Name, err)
+			gplog.Info("PostHook Command \"%s\" of task \"%s\" failed %s", taskArgs.PostHook, taskArgs.Name, err)
 			cmdExitStatus.PostHookStatus = false
 		} else {
 			gplog.Info("Successfully executed PostHook Command \"%s\" of task \"%s\"", taskArgs.PostHook, taskArgs.Name)
@@ -148,7 +168,7 @@ func (s *Server) scheduleTask(taskName string, NextScheduledTime string) {
 		//parsedTime, err := time.Parse("2006-01-02 15:04:05", NextScheduledTime)
 		parsedTime, err := time.Parse(time.RFC3339, NextScheduledTime)
 		if err != nil {
-			gplog.Debug("Error parsing time:", err)
+			gplog.Debug("Error parsing time: %s", err)
 		}
 		duration = time.Until(parsedTime)
 	}
@@ -166,7 +186,7 @@ func (s *Server) scheduleTask(taskName string, NextScheduledTime string) {
 
 			select {
 			case <-ticker.C:
-				gplog.Info("Task is ", taskArgs)
+				gplog.Info("Task is %v ", taskArgs)
 
 				//formattedTime := time.Now().Format("2006-01-02 15:04:05")
 				formattedTime := time.Now().Format(time.RFC3339)
@@ -176,7 +196,7 @@ func (s *Server) scheduleTask(taskName string, NextScheduledTime string) {
 				}
 				err := s.ExecuteTask(taskArgs.taskConfigData, &taskArgs.TaskStatus)
 				if err != nil {
-					gplog.Warn("Task %s execution failed : %w", taskName, err)
+					gplog.Warn("Task %s execution failed : %s", taskName, err)
 				}
 
 				taskArgs.LastTriggeredTime = formattedTime
@@ -253,6 +273,7 @@ func (s *Server) InitializeAndStartTask(taskName string, LastTriggeredTime strin
 		gplog.Info("Matching task %s with %s ", taskName, task.Name)
 		if taskName == task.Name {
 			gplog.Info("Adding task %s", taskName)
+
 			s.mutex.Lock()
 			// For new task, add it to task list and schedule the task
 			s.activeTaskList[task.Name] = &TaskDataInfo{
@@ -268,6 +289,34 @@ func (s *Server) InitializeAndStartTask(taskName string, LastTriggeredTime strin
 				updateTask:        make(chan struct{}, 1),
 			}
 			s.mutex.Unlock()
+			// If it is always task then just run a execute command in a go routine
+			if task.Schedule == "NA" {
+				gplog.Info("Running the task %s in background since schedule is %s", taskName, task.Schedule)
+				go func() {
+					var stdout, stderr bytes.Buffer
+					pid, cmd, err := ExecuteCommandInBackground(task.GpdrCmd, stdout, stderr)
+					if err != nil {
+						gplog.Warn("Task %s execution failed :%d  %s", taskName, pid, err)
+						return
+					}
+					s.activeTaskList[task.Name].pid = pid
+					gplog.Info("Task %s is running with PID %d, waiting to complete...........", taskName, pid)
+					err = cmd.Wait() // Wait for the command to finish executing
+					if err != nil {
+						gplog.Info("Command failed:%s", err)
+						return
+					}
+
+					// Retrieve output from buffers
+					outStr, errStr := string(stdout.Bytes()), string(stderr.Bytes())
+					gplog.Info("Output:", outStr)
+					gplog.Info("Error:", errStr)
+				}()
+				time.Sleep(2 * time.Second) // Simulating some work
+				return nil
+
+			}
+
 			gplog.Info("Task %+v", s.activeTaskList[task.Name])
 			if NextScheduledTime == "" {
 				gplog.Debug("Didn't find any existing schedule:")
@@ -315,7 +364,7 @@ func (s *Server) SaveActiveTasks() error {
 		return fmt.Errorf("%s : %s", errMsg, err)
 	}
 
-	gplog.Debug("Marshaled data is ", string(yamlData))
+	gplog.Debug("Marshaled data is %s ", string(yamlData))
 	err = os.WriteFile(utils.GetActiveServiceTaskConfigPath(), yamlData, 0644)
 	if err != nil {
 		return fmt.Errorf("%s : %s", errMsg, err)

@@ -2,6 +2,7 @@ package hub
 
 import (
 	"context"
+	"syscall"
 
 	"os"
 
@@ -22,6 +23,15 @@ func (s *Server) StopTasks(ctx context.Context, in *idl.TaskStopServiceRequest) 
 
 		// get the active task stop channel
 		taskData, isTaskFound := s.activeTaskList[taskName]
+		if s.activeTaskList[taskName].taskConfigData.Schedule == "NA" {
+			// Stop the process using the PID
+			err := syscall.Kill(s.activeTaskList[taskName].pid, syscall.SIGINT)
+			if err != nil {
+				gplog.Info("Error stopping process : %s", err)
+
+			}
+			continue
+		}
 		if !isTaskFound {
 			gplog.Warn("Task %s is not running", taskName)
 			continue

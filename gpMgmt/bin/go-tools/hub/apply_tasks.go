@@ -19,6 +19,7 @@ type TaskDataInfo struct {
 	updateTask        chan struct{}           `yaml:"-"`
 	LastTriggeredTime string                  `yaml:"LastTriggeredTime"`
 	NextScheduledTime string                  `yaml:"NextScheduledTime"`
+	pid               int                     `yaml:"-"` // pid of the task
 }
 
 type TaskExitStatus struct {
