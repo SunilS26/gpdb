@@ -1,0 +1,56 @@
+#  GPDR Service configuration file sample used at Primary/Production Cluster
+#
+
+################################################################################################################
+# Task 1 : gprecoverseg task which runs for every min for the demo purpose
+################################################################################################################
+- name: gprecoverseg_task
+  pre_hook: echo "Running gprecovereg PreHook"
+  gpdr_cmd: gprecoverseg -a
+  post_hook: echo "Running gprecoverseg posthook"
+  max_retries_on_error: 10
+  # Below value is for every 10hr from Sat-Sun
+  schedule: '* * * * *'
+
+################################################################################################################
+# Task 2 : gpdr restore point validation task which checks all required WAL files are archived and  dumps the valid  restore point in a file under gpdr_home
+################################################################################################################
+# sample task  name should be unique from other tasks names.
+- name: continuous_restore_point_validation
+  # Operations required before create-restore-point or running main gpdr commands configured below
+  # (Optional) pre-hook command.
+  # The pre-hook is retried until the max_retries_on_error count is reached if it fails.
+  pre_hook: echo "Execute Continuous restore point Validation Pre-hook"
+  # (Mandatory).Main gpdr commands to be executed, retried till the max_retries_on_error count if it fails.
+  gpdr_cmd: source ~/.bashrc && gpdr restore --type continuous --restore-point latest --validate-restore-point --backup-label 20240502-131329F  --debug 
+  # (Optional). Operations required after running gpdr command, max retries till the max_retries_on_error count
+  # is reached if it fails.
+  post_hook: echo "Execute Continuous restore point Validation Post-hook"
+  # (Mandatory).Maximum number of retries done for pre_hook, gpdr_cmd and post_hook. 0 means no retry.
+  # Value should be between 0 - 20
+  max_retries_on_error: 10
+  # (Mandatory). NA means forever running task  for demo
+  schedule: 'NA'
+
+
+################################################################################################################
+# Task 3 : gpdr continuous restore which check whether a restore point is valid (means it has all required wal files) to restore 
+################################################################################################################
+# sample task  name should be unique from other tasks names.
+- name: recovery_continuous_restore
+  # Operations required before create-restore-point or running main gpdr commands configured below
+  # (Optional) pre-hook command.
+  # The pre-hook is retried until the max_retries_on_error count is reached if it fails.
+  pre_hook: echo "Execute the Continuous Restore Pre-hook"
+  # (Mandatory).Main gpdr commands to be executed, retried till the max_retries_on_error count if it fails.
+  gpdr_cmd: source ~/.bashrc && gpdr restore --type continuous --restore-point latest
+  # (Optional). Operations required after running gpdr command, max retries till the max_retries_on_error count
+  # is reached if it fails.
+  post_hook: echo "Execute the  Continuous Restore Post-hook"
+  # (Mandatory).Maximum number of retries done for pre_hook, gpdr_cmd and post_hook. 0 means no retry.
+  # Value should be between 0 - 20
+  max_retries_on_error: 10
+  # (Mandatory).Cron Job Style schedule.See cron docs. below value is for every hour from Mon-Fri
+  schedule: '*/2 * * * *'
+
+

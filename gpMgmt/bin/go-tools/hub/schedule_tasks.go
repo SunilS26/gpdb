@@ -24,7 +24,7 @@ func (s *Server) ScheduleTasks(ctx context.Context, in *idl.TaskScheduleServiceR
 	// Schedule all the task given in the task list
 	taskExitStatus := make([]string, len(in.TaskList))
 	for i, taskName := range in.TaskList {
-		err := s.InitializeAndStartTask(taskName, "", "", false, false, false)
+		err := s.InitializeAndStartTask(taskName, "", "", false, false, false, false)
 		if err != nil {
 			gplog.Warn("failed to start the task %s: %s", taskName, err)
 			taskExitStatus[i] = "FAILED"
@@ -254,7 +254,7 @@ func (s *Server) scheduleTask(taskName string, NextScheduledTime string) {
 	}()
 }
 
-func (s *Server) InitializeAndStartTask(taskName string, LastTriggeredTime string, NextScheduledTime string, PreHookStatus bool, CmdStatus bool, PostHookStatus bool) error {
+func (s *Server) InitializeAndStartTask(taskName string, LastTriggeredTime string, NextScheduledTime string, PreHookStatus bool, CmdStatus bool, PostHookStatus bool, isDefaultTask bool) error {
 	gplog.Info("Initializing the task %s", taskName)
 
 	// Check if any existing task is present, if yes then return
@@ -263,7 +263,13 @@ func (s *Server) InitializeAndStartTask(taskName string, LastTriggeredTime strin
 	}
 
 	// Load the config file and get the task data
-	configTaskOptions, err := utils.LoadTaskConfigFileWithValidation(utils.GetServiceTaskConfigPath())
+	var configTaskOptions []utils.TaskConfigOptions
+	var err error
+	if isDefaultTask {
+		configTaskOptions, err = utils.LoadTaskConfigFileWithValidation(utils.GetServicePreloadTasksPath())
+	} else {
+		configTaskOptions, err = utils.LoadTaskConfigFileWithValidation(utils.GetServiceTaskConfigPath())
+	}
 	if err != nil {
 		return fmt.Errorf("error loading task config file: %w", err)
 	}
@@ -312,7 +318,7 @@ func (s *Server) InitializeAndStartTask(taskName string, LastTriggeredTime strin
 					gplog.Info("Output:", outStr)
 					gplog.Info("Error:", errStr)
 				}()
-				time.Sleep(2 * time.Second) // Simulating some work
+				time.Sleep(2 * time.Second)
 				return nil
 
 			}

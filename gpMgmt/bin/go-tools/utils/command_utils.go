@@ -90,6 +90,9 @@ func RunGpSourcedCommand(cmdBuilder CommandBuilder, gpHome string) (*bytes.Buffe
 func GetServiceTaskConfigPath() string {
 	return filepath.Join(viper.GetString("gphome"), "gpdr_service_tasks_config.yml")
 }
+func GetServicePreloadTasksPath() string {
+	return filepath.Join(viper.GetString("gphome"), "gp_default_preload_task.yml")
+}
 
 func GetActiveServiceTaskConfigPath() string {
 	return filepath.Join(viper.GetString("gphome"), "gpdr_service_active_tasks.yml")

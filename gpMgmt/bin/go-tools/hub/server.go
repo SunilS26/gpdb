@@ -130,6 +130,15 @@ func (s *Server) Start() error {
 		wg.Done()
 	}()
 
+	// Load any pre-loaded task
+	if _, err := os.Stat(utils.GetServicePreloadTasksPath()); err == nil {
+		gplog.Info("Found Preload Config file %s", utils.GetServicePreloadTasksPath())
+		err := s.LoadPreloadTasks()
+		if err != nil {
+			gplog.Info("Error loading active tasks: %s", err)
+		}
+	}
+
 	err = grpcServer.Serve(listener)
 	if err != nil {
 		return fmt.Errorf("failed to serve: %w", err)
@@ -435,4 +444,34 @@ func SetExecCommand(command exectest.Command) {
 
 func ResetExecCommand() {
 	execCommand = exec.Command
+}
+
+func (s *Server) LoadPreloadTasks() error {
+	errMsg := "error loading pre-load tasks"
+	gplog.Info("Loading Preload  tasks")
+
+	configTaskOptions, err := utils.LoadTaskConfigFileWithValidation(utils.GetServicePreloadTasksPath())
+	if err != nil {
+		return fmt.Errorf("%s : %s", errMsg, err)
+	}
+
+	for _, task := range configTaskOptions {
+
+		// Schedule the task to run
+		err := s.InitializeAndStartTask(task.Name,
+			"",
+			"",
+			false,
+			false,
+			false,
+			true)
+		if err != nil {
+			gplog.Warn("Error loading active tasks %s : %s", task.Name, err)
+		}
+
+	}
+
+	gplog.Info("Loaded Preload config tasks: %s", s.activeTaskList)
+
+	return nil
 }
