@@ -56,6 +56,26 @@ func (mr *MockHubClientMockRecorder) AddMirrors(arg0, arg1 interface{}, arg2 ...
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddMirrors", reflect.TypeOf((*MockHubClient)(nil).AddMirrors), varargs...)
 }
 
+// ApplyTasks mocks base method.
+func (m *MockHubClient) ApplyTasks(arg0 context.Context, arg1 *idl.ApplyTasksRequest, arg2 ...grpc.CallOption) (*idl.ApplyTasksReply, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ApplyTasks", varargs...)
+	ret0, _ := ret[0].(*idl.ApplyTasksReply)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ApplyTasks indicates an expected call of ApplyTasks.
+func (mr *MockHubClientMockRecorder) ApplyTasks(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ApplyTasks", reflect.TypeOf((*MockHubClient)(nil).ApplyTasks), varargs...)
+}
+
 // GetAllHostNames mocks base method.
 func (m *MockHubClient) GetAllHostNames(arg0 context.Context, arg1 *idl.GetAllHostNamesRequest, arg2 ...grpc.CallOption) (*idl.GetAllHostNamesReply, error) {
 	m.ctrl.T.Helper()
@@ -76,6 +96,26 @@ func (mr *MockHubClientMockRecorder) GetAllHostNames(arg0, arg1 interface{}, arg
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllHostNames", reflect.TypeOf((*MockHubClient)(nil).GetAllHostNames), varargs...)
 }
 
+// GetTaskStatus mocks base method.
+func (m *MockHubClient) GetTaskStatus(arg0 context.Context, arg1 *idl.GetTaskStatusRequest, arg2 ...grpc.CallOption) (*idl.GetTaskStatusReply, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetTaskStatus", varargs...)
+	ret0, _ := ret[0].(*idl.GetTaskStatusReply)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTaskStatus indicates an expected call of GetTaskStatus.
+func (mr *MockHubClientMockRecorder) GetTaskStatus(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTaskStatus", reflect.TypeOf((*MockHubClient)(nil).GetTaskStatus), varargs...)
+}
+
 // MakeCluster mocks base method.
 func (m *MockHubClient) MakeCluster(arg0 context.Context, arg1 *idl.MakeClusterRequest, arg2 ...grpc.CallOption) (idl.Hub_MakeClusterClient, error) {
 	m.ctrl.T.Helper()
@@ -94,6 +134,46 @@ func (mr *MockHubClientMockRecorder) MakeCluster(arg0, arg1 interface{}, arg2 ..
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MakeCluster", reflect.TypeOf((*MockHubClient)(nil).MakeCluster), varargs...)
+}
+
+// RunTask mocks base method.
+func (m *MockHubClient) RunTask(arg0 context.Context, arg1 *idl.RunTaskRequest, arg2 ...grpc.CallOption) (idl.Hub_RunTaskClient, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "RunTask", varargs...)
+	ret0, _ := ret[0].(idl.Hub_RunTaskClient)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RunTask indicates an expected call of RunTask.
+func (mr *MockHubClientMockRecorder) RunTask(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunTask", reflect.TypeOf((*MockHubClient)(nil).RunTask), varargs...)
+}
+
+// ScheduleTasks mocks base method.
+func (m *MockHubClient) ScheduleTasks(arg0 context.Context, arg1 *idl.ScheduleTasksRequest, arg2 ...grpc.CallOption) (*idl.ScheduleTasksReply, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ScheduleTasks", varargs...)
+	ret0, _ := ret[0].(*idl.ScheduleTasksReply)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ScheduleTasks indicates an expected call of ScheduleTasks.
+func (mr *MockHubClientMockRecorder) ScheduleTasks(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ScheduleTasks", reflect.TypeOf((*MockHubClient)(nil).ScheduleTasks), varargs...)
 }
 
 // StartAgents mocks base method.
@@ -176,6 +256,26 @@ func (mr *MockHubClientMockRecorder) StopAgents(arg0, arg1 interface{}, arg2 ...
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StopAgents", reflect.TypeOf((*MockHubClient)(nil).StopAgents), varargs...)
 }
 
+// StopTasks mocks base method.
+func (m *MockHubClient) StopTasks(arg0 context.Context, arg1 *idl.StopTasksRequest, arg2 ...grpc.CallOption) (*idl.StopTasksReply, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "StopTasks", varargs...)
+	ret0, _ := ret[0].(*idl.StopTasksReply)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// StopTasks indicates an expected call of StopTasks.
+func (mr *MockHubClientMockRecorder) StopTasks(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StopTasks", reflect.TypeOf((*MockHubClient)(nil).StopTasks), varargs...)
+}
+
 // MockHubServer is a mock of HubServer interface.
 type MockHubServer struct {
 	ctrl     *gomock.Controller
@@ -213,6 +313,21 @@ func (mr *MockHubServerMockRecorder) AddMirrors(arg0, arg1 interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddMirrors", reflect.TypeOf((*MockHubServer)(nil).AddMirrors), arg0, arg1)
 }
 
+// ApplyTasks mocks base method.
+func (m *MockHubServer) ApplyTasks(arg0 context.Context, arg1 *idl.ApplyTasksRequest) (*idl.ApplyTasksReply, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ApplyTasks", arg0, arg1)
+	ret0, _ := ret[0].(*idl.ApplyTasksReply)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ApplyTasks indicates an expected call of ApplyTasks.
+func (mr *MockHubServerMockRecorder) ApplyTasks(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ApplyTasks", reflect.TypeOf((*MockHubServer)(nil).ApplyTasks), arg0, arg1)
+}
+
 // GetAllHostNames mocks base method.
 func (m *MockHubServer) GetAllHostNames(arg0 context.Context, arg1 *idl.GetAllHostNamesRequest) (*idl.GetAllHostNamesReply, error) {
 	m.ctrl.T.Helper()
@@ -228,6 +343,21 @@ func (mr *MockHubServerMockRecorder) GetAllHostNames(arg0, arg1 interface{}) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllHostNames", reflect.TypeOf((*MockHubServer)(nil).GetAllHostNames), arg0, arg1)
 }
 
+// GetTaskStatus mocks base method.
+func (m *MockHubServer) GetTaskStatus(arg0 context.Context, arg1 *idl.GetTaskStatusRequest) (*idl.GetTaskStatusReply, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTaskStatus", arg0, arg1)
+	ret0, _ := ret[0].(*idl.GetTaskStatusReply)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTaskStatus indicates an expected call of GetTaskStatus.
+func (mr *MockHubServerMockRecorder) GetTaskStatus(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTaskStatus", reflect.TypeOf((*MockHubServer)(nil).GetTaskStatus), arg0, arg1)
+}
+
 // MakeCluster mocks base method.
 func (m *MockHubServer) MakeCluster(arg0 *idl.MakeClusterRequest, arg1 idl.Hub_MakeClusterServer) error {
 	m.ctrl.T.Helper()
@@ -240,6 +370,35 @@ func (m *MockHubServer) MakeCluster(arg0 *idl.MakeClusterRequest, arg1 idl.Hub_M
 func (mr *MockHubServerMockRecorder) MakeCluster(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MakeCluster", reflect.TypeOf((*MockHubServer)(nil).MakeCluster), arg0, arg1)
+}
+
+// RunTask mocks base method.
+func (m *MockHubServer) RunTask(arg0 *idl.RunTaskRequest, arg1 idl.Hub_RunTaskServer) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RunTask", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RunTask indicates an expected call of RunTask.
+func (mr *MockHubServerMockRecorder) RunTask(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunTask", reflect.TypeOf((*MockHubServer)(nil).RunTask), arg0, arg1)
+}
+
+// ScheduleTasks mocks base method.
+func (m *MockHubServer) ScheduleTasks(arg0 context.Context, arg1 *idl.ScheduleTasksRequest) (*idl.ScheduleTasksReply, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ScheduleTasks", arg0, arg1)
+	ret0, _ := ret[0].(*idl.ScheduleTasksReply)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ScheduleTasks indicates an expected call of ScheduleTasks.
+func (mr *MockHubServerMockRecorder) ScheduleTasks(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ScheduleTasks", reflect.TypeOf((*MockHubServer)(nil).ScheduleTasks), arg0, arg1)
 }
 
 // StartAgents mocks base method.
@@ -300,4 +459,19 @@ func (m *MockHubServer) StopAgents(arg0 context.Context, arg1 *idl.StopAgentsReq
 func (mr *MockHubServerMockRecorder) StopAgents(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StopAgents", reflect.TypeOf((*MockHubServer)(nil).StopAgents), arg0, arg1)
+}
+
+// StopTasks mocks base method.
+func (m *MockHubServer) StopTasks(arg0 context.Context, arg1 *idl.StopTasksRequest) (*idl.StopTasksReply, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "StopTasks", arg0, arg1)
+	ret0, _ := ret[0].(*idl.StopTasksReply)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// StopTasks indicates an expected call of StopTasks.
+func (mr *MockHubServerMockRecorder) StopTasks(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StopTasks", reflect.TypeOf((*MockHubServer)(nil).StopTasks), arg0, arg1)
 }

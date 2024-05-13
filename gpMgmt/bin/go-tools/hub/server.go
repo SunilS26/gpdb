@@ -51,10 +51,13 @@ type Server struct {
 	Conns      []*Connection
 	grpcDialer Dialer
 
-	mutex      sync.Mutex
-	grpcServer *grpc.Server
-	listener   net.Listener
-	finish     chan struct{}
+	mutex              sync.Mutex
+	grpcServer         *grpc.Server
+	listener           net.Listener
+	finish             chan struct{}
+	taskMutexRWLock    sync.RWMutex
+	activeTaskList     map[string]*TaskDescriptor
+	instantTaskRunList map[string]*TaskDescriptor
 }
 
 type Connection struct {
@@ -66,9 +69,11 @@ type Connection struct {
 
 func New(conf *Config, grpcDialer Dialer) *Server {
 	h := &Server{
-		Config:     conf,
-		grpcDialer: grpcDialer,
-		finish:     make(chan struct{}, 1),
+		Config:             conf,
+		grpcDialer:         grpcDialer,
+		finish:             make(chan struct{}, 1),
+		activeTaskList:     make(map[string]*TaskDescriptor),
+		instantTaskRunList: make(map[string]*TaskDescriptor),
 	}
 	return h
 }

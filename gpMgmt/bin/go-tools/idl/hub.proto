@@ -11,7 +11,12 @@ service Hub {
     rpc StopAgents(StopAgentsRequest) returns (StopAgentsReply) {}
     rpc MakeCluster(MakeClusterRequest) returns (stream HubReply) {}
     rpc AddMirrors(AddMirrorsRequest) returns (stream HubReply) {}
-  rpc GetAllHostNames(GetAllHostNamesRequest) returns (GetAllHostNamesReply) {}
+    rpc GetAllHostNames(GetAllHostNamesRequest) returns (GetAllHostNamesReply) {}
+    rpc ApplyTasks(ApplyTasksRequest) returns (ApplyTasksReply) {}
+    rpc ScheduleTasks(ScheduleTasksRequest) returns (ScheduleTasksReply) {}
+    rpc RunTask(RunTaskRequest) returns (stream HubReply) {}
+    rpc GetTaskStatus(GetTaskStatusRequest) returns (GetTaskStatusReply) {}
+    rpc StopTasks(StopTasksRequest) returns (StopTasksReply) {}
 }
 
 message AddMirrorsRequest {
@@ -64,6 +69,7 @@ message HubReply {
         LogMessage logMsg = 1;
         string stdoutMsg = 2;
         ProgressMessage progressMsg = 3;
+        RunTaskReply runTaskResponseMsg = 4;
     };
 }
 
@@ -122,4 +128,59 @@ message Locale {
     string lc_monetory = 5;
     string lc_numeric = 6;
     string lc_time = 7;
+}
+
+enum taskAction {
+    ADD = 0;
+    DELETED = 1;
+    UPDATE = 2;
+}
+message ApplyTasksRequest {
+    taskAction taskAction = 1;
+}
+
+message ApplyTasksReply { }
+
+message ScheduleTasksRequest {
+    repeated string task_list = 1;
+}
+
+message TaskExecutionStatus {
+    string pre_hook_status = 1;
+    uint32 pre_hook_pid = 2;
+    string cmd_status = 3;
+    uint32 cmd_pid = 4;
+    string post_hook_status = 5;
+    uint32 post_hook_pid = 6;
+    string LastTriggeredTime = 7;
+    string NextScheduledTime = 8;
+    string status = 9;
+}
+
+message ScheduleTasksReply {
+    repeated string status = 1;
+}
+
+message RunTaskRequest {
+    repeated string task_list = 1;
+}
+
+message RunTaskReply {
+    repeated string status = 1;
+    repeated TaskExecutionStatus taskRetStatus = 2;
+}
+
+message StopTasksRequest {
+    bool forceStop = 1;
+    repeated string taskList = 2;
+}
+
+message StopTasksReply {
+    repeated string status = 1;
+}
+
+message GetTaskStatusRequest { }
+
+message  GetTaskStatusReply {
+    map<string, TaskExecutionStatus> taskStatus = 1;
 }

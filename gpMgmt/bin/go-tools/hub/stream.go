@@ -155,3 +155,25 @@ func (h *HubStream) StreamProgressMsg(label string, total int) {
 		gplog.Error("unable to stream message %q: %s", message, err)
 	}
 }
+
+/*
+StreamRunTaskResponse Command Streams the PID and task status to the client
+as and when it is generated
+*/
+func (h *HubStream) StreamRunTaskResponse(status []string, response []*idl.TaskExecutionStatus) {
+	gplog.Debug("Sending stream data status:%+v and status response: %+v", status, response)
+
+	message := &idl.HubReply{
+		Message: &idl.HubReply_RunTaskResponseMsg{
+			RunTaskResponseMsg: &idl.RunTaskReply{
+				Status:        status,
+				TaskRetStatus: response,
+			},
+		},
+	}
+
+	err := h.handler.Send(message)
+	if err != nil {
+		gplog.Error("unable to stream message %q: %s", message, err)
+	}
+}
